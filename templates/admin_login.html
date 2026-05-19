@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="管理员登录页面，用于启用照片上传权限。" />
+    <title>管理员登录 - 照片时序档案</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}" />
+  </head>
+  <body>
+    <div class="page-shell auth-shell">
+      <main class="auth-card">
+        <p class="eyebrow">Admin access</p>
+        <h1>管理员登录</h1>
+        <p class="hero-text">
+          登录后才能上传照片。推荐使用 GitHub 账号验证，访客仍然只会看到时间线内容。
+        </p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-list">
+              {% for category, message in messages %}
+                <p class="flash flash--{{ category }}">{{ message }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% if github_login_configured %}
+          <p class="access-note">
+            允许登录的 GitHub 账号：{{ github_allowed_users_label }}。
+          </p>
+          <form class="upload-form" method="get" action="{{ url_for('admin_github_login') }}">
+            <input type="hidden" name="next" value="{{ next_url }}" />
+            <button class="submit-btn" type="submit">使用 GitHub 登录</button>
+          </form>
+        {% endif %}
+
+        {% if admin_password_configured %}
+          {% if github_login_configured %}
+            <p class="access-note">或者使用传统密码作为备用方式。</p>
+          {% endif %}
+          <form class="upload-form" method="post" action="{{ url_for('admin_login') }}">
+            <input type="hidden" name="next" value="{{ next_url }}" />
+            <label class="field">
+              <span>管理员密码</span>
+              <input type="password" name="password" autocomplete="current-password" required />
+            </label>
+            <button class="submit-btn" type="submit">登录并启用上传</button>
+          </form>
+        {% elif not github_login_configured %}
+          <p class="access-note">
+            服务器还没有配置 GitHub 登录或管理员密码，当前只能浏览照片，无法启用上传。
+          </p>
+        {% endif %}
+
+        <div class="admin-actions">
+          <a class="text-link" href="{{ url_for('index') }}">返回首页</a>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

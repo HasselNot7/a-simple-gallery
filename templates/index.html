@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="记录于此"
+    />
+    <title>HasselNot's Gallery</title>
+    <link rel="icon" type="image/png" href="{{ url_for('logo_file', filename='486.png', v='1') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">HasselNot's Gallery</p>
+          <h1>
+            白驹过隙
+            <span class="title-en">Archive</span>
+          </h1>
+          <p class="hero-text">
+            The Art of Engineering. Engineering for Art.
+          </p>
+          <div class="hero-stats">
+            <div class="stat">
+              <span>{{ total_photos }}</span>
+              <small>张照片</small>
+            </div>
+            <div class="stat">
+              <span>{{ today_visitors }}</span>
+              <small>今日访客</small>
+            </div>
+            <div class="stat">
+              <span>{{ latest_shot }}</span>
+              <small>最新拍摄</small>
+            </div>
+            <div class="stat">
+              <span>{{ latest_upload }}</span>
+              <small>最近上传</small>
+            </div>
+          </div>
+
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <div class="flash-list">
+                {% for category, message in messages %}
+                  <p class="flash flash--{{ category }}">{{ message }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+        </div>
+
+        <div class="hero-actions">
+          {% if admin_authenticated %}
+            <button class="hero-action hero-action--primary" type="button" data-open-admin-drawer>
+              管理员上传
+            </button>
+            <a class="hero-action hero-action--ghost" href="{{ url_for('admin_logout') }}">退出管理员</a>
+          {% elif github_login_configured %}
+            <a class="hero-action hero-action--primary" href="{{ url_for('admin_github_login', next=url_for('index')) }}">
+              GitHub 登录
+            </a>
+          {% elif admin_password_configured %}
+            <a class="hero-action hero-action--primary" href="{{ url_for('admin_login', next=url_for('index')) }}">
+              管理员登录
+            </a>
+          {% else %}
+            <span class="hero-action hero-action--ghost hero-action--static">暂未启用上传</span>
+          {% endif %}
+        </div>
+      </header>
+
+      <div class="layout">
+        <aside class="timeline-rail">
+          <div class="timeline-rail__head">
+            <p class="timeline-rail__eyebrow">Timeline</p>
+            <h2>{{ timeline_title }}</h2>
+            <p class="timeline-rail__hint">{{ timeline_hint }}</p>
+            <div class="timeline-view-switch" aria-label="时间线视图切换">
+              <a
+                class="timeline-view-switch__item{% if view_mode == 'day' %} is-active{% endif %}"
+                href="{{ url_for('index', view='day') }}"
+              >
+                按天
+              </a>
+              <a
+                class="timeline-view-switch__item{% if view_mode == 'month' %} is-active{% endif %}"
+                href="{{ url_for('index', view='month') }}"
+              >
+                按月
+              </a>
+            </div>
+          </div>
+
+          {% if timeline %}
+            <nav class="timeline-nav" data-timeline-nav>
+              {% for group in timeline %}
+                <a
+                  class="timeline-nav__item"
+                  href="#group-{{ loop.index0 }}"
+                  data-timeline-nav-item
+                  data-target="group-{{ loop.index0 }}"
+                >
+                  <span class="timeline-nav__marker"></span>
+                  <span class="timeline-nav__text">
+                    <span class="timeline-nav__date">{{ group.label }}</span>
+                    <span class="timeline-nav__count">{{ group.photos | length }} 张</span>
+                  </span>
+                </a>
+              {% endfor %}
+            </nav>
+          {% else %}
+            <div class="timeline-empty">还没有照片。上传后，时间线会从左侧开始生长。</div>
+          {% endif %}
+        </aside>
+
+        <main class="timeline">
+          {% if timeline %}
+            {% for group in timeline %}
+              <section class="timeline-group" id="group-{{ loop.index0 }}" data-timeline-section>
+                <div class="timeline-group__label">
+                  <span class="date">{{ group.label }}</span>
+                  <span class="count">{{ group.photos | length }} 张</span>
+                </div>
+
+                <div class="timeline-group__items">
+                  {% for photo in group.photos %}
+                    <article
+                      class="photo-card"
+                      id="photo-{{ photo.id }}"
+                      data-photo-orientation="{{ photo.orientation }}"
+                      data-photo-id="{{ photo.id }}"
+                      data-photo-title="{{ photo.title | e }}"
+                      data-photo-description="{{ photo.description | e }}"
+                      data-photo-taken-at="{{ photo.taken_input_value }}"
+                    >
+                      <div class="photo-card__visual photo-card__visual--{{ photo.orientation }}">
+                        <button
+                          class="photo-card__media"
+                          type="button"
+                          data-lightbox-trigger
+                          data-full="{{ photo.original_url }}"
+                          data-title="{{ photo.title | e }}"
+                          data-description="{{ photo.description | e }}"
+                          data-meta="拍摄于 {{ photo.taken_label }} · 上传于 {{ photo.uploaded_label }}"
+                          aria-label="查看 {{ photo.title | e }} 的大图"
+                        >
+                          <img src="{{ photo.thumbnail_url }}" alt="{{ photo.title | e }}" loading="lazy" />
+                        </button>
+                      </div>
+
+                      <div class="photo-card__content">
+                        <div class="photo-card__content-head">
+                          <div class="photo-card__heading">
+                            <p class="photo-card__title">{{ photo.title }}</p>
+                            <p class="photo-card__time">拍摄于 {{ photo.taken_label }}</p>
+                          </div>
+
+                          {% if admin_authenticated %}
+                            <div class="photo-card__actions">
+                              <button
+                                class="photo-card__edit-button"
+                                type="button"
+                                data-open-edit-drawer
+                                data-photo-id="{{ photo.id }}"
+                                data-photo-title="{{ photo.title | e }}"
+                                data-photo-description="{{ photo.description | e }}"
+                                data-photo-taken-at="{{ photo.taken_input_value }}"
+                                data-photo-uploaded-at="{{ photo.uploaded_input_value }}"
+                                data-photo-original-name="{{ photo.original_name | e }}"
+                                data-photo-camera-model="{{ photo.camera_model | e }}"
+                                data-photo-lens-model="{{ photo.lens_model | e }}"
+                                data-photo-focal-length="{{ photo.focal_length_35mm | e }}"
+                                data-photo-aperture="{{ photo.aperture | e }}"
+                                data-photo-shutter-speed="{{ photo.shutter_speed | e }}"
+                                data-photo-iso="{{ photo.iso | e }}"
+                              >
+                                修改信息
+                              </button>
+
+                              <form
+                                class="photo-card__delete"
+                                method="post"
+                                action="{{ url_for('delete_photo', photo_id=photo.id) }}"
+                                data-delete-form
+                                data-photo-title="{{ photo.title | e }}"
+                              >
+                                <button class="photo-card__delete-button" type="submit">删除</button>
+                              </form>
+                            </div>
+                          {% endif %}
+                        </div>
+
+                        {% if photo.description %}
+                          <p class="photo-card__desc">{{ photo.description }}</p>
+                        {% else %}
+                          <p class="photo-card__desc photo-card__desc--placeholder">这张照片还没有备注。</p>
+                        {% endif %}
+
+                        {% if photo.exif_specs %}
+                          <div class="photo-card__specs">
+                            {% for spec in photo.exif_specs %}
+                              <div class="photo-card__spec">
+                                <span>{{ spec.label }}</span>
+                                <strong>{{ spec.value }}</strong>
+                              </div>
+                            {% endfor %}
+                          </div>
+                        {% else %}
+                          <p class="photo-card__specs-empty">这张照片没有可识别的相机参数。</p>
+                        {% endif %}
+
+                        <div class="photo-card__footer">
+                          <span>文件名 {{ photo.original_name }}</span>
+                          <span>上传于 {{ photo.uploaded_label }}</span>
+                        </div>
+                      </div>
+                    </article>
+                  {% endfor %}
+                </div>
+              </section>
+            {% endfor %}
+          {% else %}
+            <section class="empty-state">
+              <p>还没有照片。先上传第一张，时间线就会开始生长。</p>
+            </section>
+          {% endif %}
+        </main>
+      </div>
+    </div>
+
+    {% if admin_authenticated %}
+      <div class="admin-drawer" data-admin-drawer hidden aria-hidden="true">
+        <div class="admin-drawer__backdrop" data-close-admin-drawer></div>
+        <aside class="admin-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="admin-drawer-title">
+          <div class="admin-drawer__head">
+            <div>
+              <p class="eyebrow">Admin</p>
+              <h2 id="admin-drawer-title">上传照片</h2>
+            </div>
+            <button class="admin-drawer__close" type="button" data-close-admin-drawer>关闭</button>
+          </div>
+
+          <p class="access-note">
+            系统会优先读取 EXIF 的 CreateDate；如果没有，就使用上传时间。
+          </p>
+
+          <form class="upload-form" method="post" action="{{ url_for('upload') }}" enctype="multipart/form-data">
+            <label class="field">
+              <span>照片</span>
+              <input id="photo-input" name="photos" type="file" accept="image/*" multiple required />
+              <span class="field-hint">支持 JPG、PNG、WEBP、GIF、AVIF</span>
+            </label>
+
+            <label class="field">
+              <span>标题</span>
+              <input name="title" type="text" placeholder="可不填，默认使用文件名" />
+            </label>
+
+            <label class="field">
+              <span>说明</span>
+              <textarea name="description" rows="4" placeholder="一句话记录当时的场景"></textarea>
+            </label>
+
+            <div class="preview-strip" id="preview-strip" aria-live="polite"></div>
+
+            <button class="submit-btn" type="submit">上传到时间线</button>
+          </form>
+        </aside>
+      </div>
+
+      <div class="edit-drawer" data-edit-drawer hidden aria-hidden="true">
+        <div class="edit-drawer__backdrop" data-close-edit-drawer></div>
+        <aside class="edit-drawer__panel" role="dialog" aria-modal="true" aria-labelledby="edit-drawer-title">
+          <div class="admin-drawer__head">
+            <div>
+              <p class="eyebrow">Admin</p>
+              <h2 id="edit-drawer-title">修改照片信息</h2>
+            </div>
+            <button class="admin-drawer__close" type="button" data-close-edit-drawer>关闭</button>
+          </div>
+
+          <p class="access-note" data-edit-note>
+            可以修改标题、原文件名、拍摄时间、上传时间和相机参数。修改后会重新参与时间线排序。
+          </p>
+          <p class="access-note" data-edit-filename></p>
+
+          <form class="upload-form" method="post" action="" data-edit-form>
+            <label class="field">
+              <span>标题</span>
+              <input id="edit-photo-title" name="title" type="text" placeholder="照片标题" />
+            </label>
+
+            <label class="field">
+              <span>原文件名</span>
+              <input id="edit-photo-original-name" name="original_name" type="text" placeholder="original.jpg" />
+            </label>
+
+            <label class="field">
+              <span>上传时间</span>
+              <input id="edit-photo-uploaded-at" name="uploaded_at" type="datetime-local" />
+            </label>
+
+            <label class="field">
+              <span>拍摄时间</span>
+              <input id="edit-photo-taken-at" name="taken_at" type="datetime-local" />
+            </label>
+
+            <label class="field">
+              <span>相机型号</span>
+              <input id="edit-photo-camera-model" name="camera_model" type="text" placeholder="Canon EOS R5" />
+            </label>
+
+            <label class="field">
+              <span>镜头型号</span>
+              <input id="edit-photo-lens-model" name="lens_model" type="text" placeholder="RF24-70mm F2.8 L IS USM" />
+            </label>
+
+            <label class="field">
+              <span>35mm 等效焦距</span>
+              <input id="edit-photo-focal-length" name="focal_length_35mm" type="text" placeholder="35mm" />
+            </label>
+
+            <label class="field">
+              <span>光圈</span>
+              <input id="edit-photo-aperture" name="aperture" type="text" placeholder="f/2.8" />
+            </label>
+
+            <label class="field">
+              <span>快门速度</span>
+              <input id="edit-photo-shutter-speed" name="shutter_speed" type="text" placeholder="1/125s" />
+            </label>
+
+            <label class="field">
+              <span>ISO</span>
+              <input id="edit-photo-iso" name="iso" type="text" placeholder="100" />
+            </label>
+
+            <label class="field">
+              <span>说明</span>
+              <textarea id="edit-photo-description" name="description" rows="4" placeholder="备注"></textarea>
+            </label>
+
+            <button class="submit-btn" type="submit">保存修改</button>
+          </form>
+        </aside>
+      </div>
+    {% endif %}
+
+    <div class="lightbox" id="lightbox" aria-hidden="true">
+      <button class="lightbox__close" type="button" data-close>关闭</button>
+      <figure class="lightbox__figure">
+        <img id="lightbox-image" alt="" />
+        <figcaption>
+          <h3 id="lightbox-title"></h3>
+          <p id="lightbox-description"></p>
+          <small id="lightbox-meta"></small>
+        </figcaption>
+      </figure>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/site.js') }}" defer></script>
+  </body>
+</html>

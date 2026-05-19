@@ -1,0 +1,8 @@
+name: photo-timeline
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - flask
+  - gunicorn
+  - pillow
