@@ -20,6 +20,37 @@
   --accent-strong: #584332;
   --line: rgba(24, 19, 16, 0.12);
   --shadow: 0 24px 80px rgba(60, 44, 29, 0.12);
+  --scrollbar-thumb: rgba(143, 117, 88, 0.28);
+  --scrollbar-thumb-hover: rgba(143, 117, 88, 0.48);
+}
+
+/* ── 滚动条美化 ── */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 * {
@@ -295,6 +326,8 @@ a {
   background: rgba(255, 255, 255, 0.52);
   backdrop-filter: blur(18px);
   box-shadow: var(--shadow);
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
 }
 
 .timeline-rail__head {
