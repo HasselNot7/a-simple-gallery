@@ -294,14 +294,21 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     if (lightbox && lightbox.classList.contains("is-open")) {
       closeLightbox();
+      return;
     }
 
     if (adminDrawer && !adminDrawer.hidden) {
       closeAdminDrawer();
+      return;
     }
 
     if (editDrawer && !editDrawer.hidden) {
       closeEditDrawer();
+      return;
+    }
+
+    if (timelineRail && timelineRail.classList.contains("is-expanded")) {
+      collapseTimelineRail();
     }
   }
 });
@@ -339,3 +346,82 @@ if (timelineNavItems.length && timelineSections.length) {
     });
   });
 }
+
+/* ── 移动端时间线底部抽屉 ── */
+const timelineRail = document.querySelector(".timeline-rail");
+const timelineRailHead = document.querySelector(".timeline-rail__head");
+const timelineDragHandle = document.querySelector(".timeline-rail__drag-handle");
+
+function isMobileLayout() {
+  return window.matchMedia("(max-width: 1120px)").matches;
+}
+
+function expandTimelineRail() {
+  if (!timelineRail) return;
+  timelineRail.classList.add("is-expanded");
+}
+
+function collapseTimelineRail() {
+  if (!timelineRail) return;
+  timelineRail.classList.remove("is-expanded");
+}
+
+function toggleTimelineRail() {
+  if (!timelineRail) return;
+  if (timelineRail.classList.contains("is-expanded")) {
+    collapseTimelineRail();
+  } else {
+    expandTimelineRail();
+  }
+}
+
+/* 点击头部区域或拖拽条展开/收起 */
+function handleTimelineRailToggle(event) {
+  if (!isMobileLayout()) return;
+  /* 忽略视图切换链接和普通链接的点击 */
+  if (event.target.closest(".timeline-view-switch") || event.target.closest("a")) return;
+  toggleTimelineRail();
+}
+
+if (timelineRailHead) {
+  timelineRailHead.addEventListener("click", handleTimelineRailToggle);
+}
+
+if (timelineDragHandle) {
+  timelineDragHandle.addEventListener("click", handleTimelineRailToggle);
+}
+
+/* 点击导航项后收起抽屉并跳转到对应区域（移动端） */
+timelineNavItems.forEach((item) => {
+  item.addEventListener("click", (event) => {
+    if (!isMobileLayout() || !timelineRail) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const targetId = item.dataset.target || (item.getAttribute("href") || "").replace("#", "");
+    /* 收起抽屉 */
+    timelineRail.classList.remove("is-expanded");
+    /* 跳转到目标区域 */
+    if (targetId) {
+      const target = document.getElementById(targetId);
+      if (target) {
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  });
+});
+
+/* 点击抽屉外部任意位置时收起（移动端且抽屉展开时） */
+document.addEventListener("click", (event) => {
+  if (!isMobileLayout() || !timelineRail || !timelineRail.classList.contains("is-expanded")) return;
+  if (!timelineRail.contains(event.target)) {
+    collapseTimelineRail();
+  }
+});
+
+/* 窗口尺寸变化时自动收起并重置状态 */
+window.addEventListener("resize", () => {
+  if (!timelineRail) return;
+  if (!isMobileLayout()) {
+    collapseTimelineRail();
+  }
+});

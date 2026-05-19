@@ -75,46 +75,49 @@
 
       <div class="layout">
         <aside class="timeline-rail">
-          <div class="timeline-rail__head">
-            <p class="timeline-rail__eyebrow">Timeline</p>
-            <h2>{{ timeline_title }}</h2>
-            <p class="timeline-rail__hint">{{ timeline_hint }}</p>
-            <div class="timeline-view-switch" aria-label="时间线视图切换">
-              <a
-                class="timeline-view-switch__item{% if view_mode == 'day' %} is-active{% endif %}"
-                href="{{ url_for('index', view='day') }}"
-              >
-                按天
-              </a>
-              <a
-                class="timeline-view-switch__item{% if view_mode == 'month' %} is-active{% endif %}"
-                href="{{ url_for('index', view='month') }}"
-              >
-                按月
-              </a>
-            </div>
-          </div>
-
-          {% if timeline %}
-            <nav class="timeline-nav" data-timeline-nav>
-              {% for group in timeline %}
+          <div class="timeline-rail__drag-handle"></div>
+          <div class="timeline-rail__body">
+            <div class="timeline-rail__head">
+              <p class="timeline-rail__eyebrow">Timeline</p>
+              <h2>{{ timeline_title }}</h2>
+              <p class="timeline-rail__hint">{{ timeline_hint }}</p>
+              <div class="timeline-view-switch" aria-label="时间线视图切换">
                 <a
-                  class="timeline-nav__item"
-                  href="#group-{{ loop.index0 }}"
-                  data-timeline-nav-item
-                  data-target="group-{{ loop.index0 }}"
+                  class="timeline-view-switch__item{% if view_mode == 'day' %} is-active{% endif %}"
+                  href="{{ url_for('index', view='day') }}"
                 >
-                  <span class="timeline-nav__marker"></span>
-                  <span class="timeline-nav__text">
-                    <span class="timeline-nav__date">{{ group.label }}</span>
-                    <span class="timeline-nav__count">{{ group.photos | length }} 张</span>
-                  </span>
+                  按天
                 </a>
-              {% endfor %}
-            </nav>
-          {% else %}
-            <div class="timeline-empty">还没有照片。上传后，时间线会从左侧开始生长。</div>
-          {% endif %}
+                <a
+                  class="timeline-view-switch__item{% if view_mode == 'month' %} is-active{% endif %}"
+                  href="{{ url_for('index', view='month') }}"
+                >
+                  按月
+                </a>
+              </div>
+            </div>
+
+            {% if timeline %}
+              <nav class="timeline-nav" data-timeline-nav>
+                {% for group in timeline %}
+                  <a
+                    class="timeline-nav__item"
+                    href="#group-{{ loop.index0 }}"
+                    data-timeline-nav-item
+                    data-target="group-{{ loop.index0 }}"
+                  >
+                    <span class="timeline-nav__marker"></span>
+                    <span class="timeline-nav__text">
+                      <span class="timeline-nav__date">{{ group.label }}</span>
+                      <span class="timeline-nav__count">{{ group.photos | length }} 张</span>
+                    </span>
+                  </a>
+                {% endfor %}
+              </nav>
+            {% else %}
+              <div class="timeline-empty">还没有照片。上传后，时间线会从左侧开始生长。</div>
+            {% endif %}
+          </div>
         </aside>
 
         <main class="timeline">
